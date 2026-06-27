@@ -456,20 +456,89 @@
             soundBtn.style.width = '100%';
             
             let audio = null;
+            let isPlaying = false;
+            
             soundBtn.addEventListener('click', () => {
-                if (audio && !audio.paused) {
+                if (isPlaying) {
+                    // Sound is playing, stop it
                     audio.pause();
                     soundBtn.textContent = '🔊 Play Night Sound';
+                    isPlaying = false;
                 } else {
+                    // Sound is not playing, play from beginning
                     if (!audio) {
                         audio = new Audio('/sounds/night.aac');
                     }
-                    audio.currentTime = 0;
-                    audio.volume = 1.0;
-                    audio.play().catch(e => {
-                        console.error('Audio error:', e);
-                    });
-                    soundBtn.textContent = '🔇 Stop Night Sound';
+                    audio.currentTime = 0; // Always start from beginning
+                    audio.volume = 2.0;
+                    
+                    // Handle browser autoplay restrictions
+                    const playPromise = audio.play();
+                    
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            soundBtn.textContent = '🔇 Stop Night Sound';
+                            isPlaying = true;
+                        }).catch(error => {
+                            console.error('Audio play failed:', error);
+                            showError('Click anywhere to enable sound, then try again.');
+                            
+                            // Add click handler to enable audio
+                            document.body.addEventListener('click', function enableAudio() {
+                                audio.play().then(() => {
+                                    soundBtn.textContent = '🔇 Stop Night Sound';
+                                    isPlaying = true;
+                                }).catch(e => {
+                                    console.error('Still failed:', e);
+                                });
+                                document.body.removeEventListener('click', enableAudio);
+                            }, { once: true });
+                        });
+                    } else {
+                        // Old browsers fall back
+                        soundBtn.textContent = '🔇 Stop Night Sound';
+                        isPlaying = true;
+                    }
+                }
+            });
+                    // Sound is not playing, play it
+                    if (!audio) {
+                        audio = new Audio('/sounds/night.aac');
+                    }
+                    
+                    // Handle browser autoplay restrictions
+                    const playPromise = audio.play();
+                    
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            audio.currentTime = 0;
+                            audio.volume = 2.0;
+                            soundBtn.textContent = '🔇 Stop Night Sound';
+                            isPlaying = true;
+                        }).catch(error => {
+                            console.error('Audio play failed:', error);
+                            showError('Click anywhere to enable sound, then try again.');
+                            
+                            // Add click handler to enable audio
+                            document.body.addEventListener('click', function enableAudio() {
+                                audio.play().then(() => {
+                                    audio.currentTime = 0;
+                                    audio.volume = 2.0;
+                                    soundBtn.textContent = '🔇 Stop Night Sound';
+                                    isPlaying = true;
+                                }).catch(e => {
+                                    console.error('Still failed:', e);
+                                });
+                                document.body.removeEventListener('click', enableAudio);
+                            }, { once: true });
+                        });
+                    } else {
+                        // Old browsers fall back
+                        audio.currentTime = 0;
+                        audio.volume = 2.0;
+                        soundBtn.textContent = '🔇 Stop Night Sound';
+                        isPlaying = true;
+                    }
                 }
             });
             
@@ -552,6 +621,14 @@
         
         socket.on('error', (data) => {
             showError(data.message);
+        });
+        
+        socket.on('configSaved', (data) => {
+            if (data.success) {
+                showSuccess('Configuration saved successfully!');
+            } else {
+                showError(data.message || 'Failed to save configuration');
+            }
         });
         
         // Helper functions
