@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Werewolf Game - Moderator</title>
+    <style>
+        * {
+            font-family: sans-serif;
+        }
+        
+        body {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: #2196F3;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+        }
+        
+        button {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #0b7dda;
+        }
+        
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .back-button {
+            background-color: #6c757d;
+            margin-bottom: 20px;
+        }
+        
+        .back-button:hover {
+            background-color: #5a6268;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            display: none;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            display: none;
+        }
+        
+        .game-info {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        
+        .player-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .player-card {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .game-icon {
+            text-align: center;
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        
+        .room-code-display {
+            font-family: monospace;
+            font-size: 24px;
+            letter-spacing: 3px;
+            background-color: #e3f2fd;
+            padding: 10px;
+            border-radius: 5px;
+            display: inline-block;
+            margin: 10px 0;
+        }
+        
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 400px;
+            max-width: 90%;
+        }
+        
+        .modal-content h2 {
+            margin-top: 0;
+            color: #2196F3;
+        }
+        
+        .modal-content label {
+            display: block;
+            margin: 10px 0;
+            font-weight: normal;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .modal-buttons button {
+            flex: 1;
+            padding: 10px;
+            width: auto;
+        }
+        
+        #cancelBtn {
+            background-color: #6c757d;
+        }
+        
+        #saveBtn {
+            background-color: #2196F3;
+            color: white;
+        }
+        
+        /* Game overlay styles */
+        #gameOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            flex-direction: column;
+        }
+        
+        .player-item {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 8px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="game-icon">🌕</div>
+        <h1>Game Moderator Panel</h1>
+        
+        <button class="back-button" onclick="window.location.href='index.html'">
+            ← Back to Landing Page
+        </button>
+        
+        <div class="section">
+            <button id="createGameBtn">Create New Game Room</button>
+        </div>
+        
+        <div id="gameInfoSection" style="display: none;">
+            <div class="game-info">
+                <h2>Your Game Room</h2>
+                <p>Share this code with players:</p>
+                <div class="room-code-display" id="gameRoomCode"></div>
+                <p>Players can join at the player page using this code.</p>
+            </div>
+            
+            <h2>Players in Game</h2>
+            <div id="playersContainer">
+                <p>No players have joined yet. Waiting for players...</p>
+            </div>
+            
+            <div class="section">
+                <button id="refreshPlayersBtn">Refresh Player List</button>
+                <button id="gameConfigBtn" style="margin-top: 10px; background-color: #6c757d;">Game Configuration</button>
+                <button id="startGameBtn" style="margin-top: 10px; background-color: #4CAF50;">Start Game</button>
+            </div>
+        </div>
+        
+        <div id="statusSuccess" class="status success"></div>
+        <div id="statusError" class="status error"></div>
+    </div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        
+        // DOM elements
+        const createGameBtn = document.getElementById('createGameBtn');
+        const gameInfoSection = document.getElementById('gameInfoSection');
+        const gameRoomCode = document.getElementById('gameRoomCode');
+        const playersContainer = document.getElementById('playersContainer');
+        const refreshPlayersBtn = document.getElementById('refreshPlayersBtn');
+        const gameConfigBtn = document.getElementById('gameConfigBtn');
+        const startGameBtn = document.getElementById('startGameBtn');
+        const statusSuccess = document.getElementById('statusSuccess');
+        const statusError = document.getElementById('statusError');
+        
+        let currentGameRoom = null;
+        
+        // Create game room
+        createGameBtn.addEventListener('click', () => {
+            socket.emit('createModeratorRoom');
+        });
+        
+        // Refresh players
+        refreshPlayersBtn.addEventListener('click', () => {
+            if (currentGameRoom) {
+                socket.emit('getPlayerList', currentGameRoom);
+            }
+        });
+        
+        // Game configuration
+        gameConfigBtn.addEventListener('click', () => {
+            openGameConfigWindow();
+        });
+        
+        // Start game
+        startGameBtn.addEventListener('click', () => {
+            if (currentGameRoom) {
+                socket.emit('startGame', { roomCode: currentGameRoom });
+            } else {
+                showError('No active game room');
+            }
+        });
+        
+        function openGameConfigWindow() {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            
+            const content = document.createElement('div');
+            content.className = 'modal-content';
+            content.innerHTML = `
+                <h2>Game Configuration</h2>
+                <div>
+                    <label><input type="checkbox" id="werewolvesCheckbox" checked> Enable Werewolves</label>
+                </div>
+                <div>
+                    <label><input type="checkbox" id="seerCheckbox" checked> Enable Seer Role</label>
+                </div>
+                <div>
+                    <label><input type="checkbox" id="doctorCheckbox" checked> Enable Doctor Role</label>
+                </div>
+                <div>
+                    <label><input type="checkbox" id="witchCheckbox" checked> Enable Witch Role</label>
+                </div>
+                <div>
+                    <label><input type="checkbox" id="hunterCheckbox"> Enable Hunter Role</label>
+                </div>
+                <div>
+                    <label><input type="checkbox" id="masonsCheckbox"> Enable Masons Role</label>
+                </div>
+                <div class="modal-buttons">
+                    <button id="cancelBtn">Cancel</button>
+                    <button id="saveBtn">Save</button>
+                </div>
+            `;
+            
+            modal.appendChild(content);
+            document.body.appendChild(modal);
+            
+            content.querySelector('#cancelBtn').addEventListener('click', () => {
+                document.body.removeChild(modal);
+            });
+            
+            content.querySelector('#saveBtn').addEventListener('click', () => {
+                const config = {
+                    werewolfCount: parseInt(content.querySelector('#werewolvesSelect').value),
+                    enableSeer: content.querySelector('#seerCheckbox').checked,
+                    enableDoctor: content.querySelector('#doctorCheckbox').checked,
+                    enableHunter: content.querySelector('#hunterCheckbox').checked,
+                    enableMasons: content.querySelector('#masonsCheckbox').checked,
+                    enableWitch: content.querySelector('#witchCheckbox').checked
+                };
+                
+                console.log('Saving config:', config);
+                
+                if (currentGameRoom) {
+                    socket.emit('saveGameConfig', { roomCode: currentGameRoom, config });
+                    showSuccess('Configuration saved!');
+                } else {
+                    showError('No active game room');
+                }
+                
+                document.body.removeChild(modal);
+            });
+        }
+        
+        function showGameManagementView(players) {
+            // Create overlay (don't hide the original content)
+            const overlay = document.createElement('div');
+            overlay.id = 'gameOverlay';
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100%';
+            overlay.style.height = '100%';
+            overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+            overlay.style.display = 'flex';
+            overlay.style.justifyContent = 'center';
+            overlay.style.alignItems = 'center';
+            overlay.style.zIndex = '1000';
+            overlay.style.flexDirection = 'column';
+            
+            // Create content container
+            const content = document.createElement('div');
+            content.style.backgroundColor = 'white';
+            content.style.padding = '30px';
+            content.style.borderRadius = '10px';
+            content.style.width = '90%';
+            content.style.maxWidth = '600px';
+            content.style.maxHeight = '80vh';
+            content.style.overflowY = 'auto';
+            
+            // Add title
+            const title = document.createElement('h2');
+            title.textContent = 'Game in Progress - Track Eliminations';
+            title.style.textAlign = 'center';
+            title.style.color = '#2196F3';
+            title.style.marginBottom = '20px';
+            content.appendChild(title);
+            
+            // Create players list
+            const playersList = document.createElement('div');
+            playersList.style.margin = '20px 0';
+            
+            players.forEach(player => {
+                const playerItem = document.createElement('div');
+                playerItem.className = 'player-item';
+                playerItem.style.padding = '12px';
+                playerItem.style.border = '1px solid #ddd';
+                playerItem.style.borderRadius = '5px';
+                playerItem.style.margin = '8px 0';
+                playerItem.style.cursor = 'pointer';
+                playerItem.style.transition = 'all 0.3s';
+                playerItem.style.display = 'flex';
+                playerItem.style.alignItems = 'center';
+                playerItem.style.justifyContent = 'space-between';
+                
+                const playerInfo = document.createElement('span');
+                playerInfo.textContent = `${player.username} (${player.role})`;
+                playerInfo.style.fontSize = '18px';
+                playerInfo.style.fontWeight = '500';
+                
+                const statusIcon = document.createElement('span');
+                statusIcon.textContent = '✅';
+                statusIcon.style.fontSize = '20px';
+                statusIcon.style.color = '#4CAF50';
+                
+                playerItem.appendChild(playerInfo);
+                playerItem.appendChild(statusIcon);
+                
+                // Click to toggle alive/dead status
+                playerItem.addEventListener('click', () => {
+                    if (playerItem.style.textDecoration === 'line-through') {
+                        playerItem.style.textDecoration = 'none';
+                        playerItem.style.opacity = '1';
+                        statusIcon.textContent = '✅';
+                        statusIcon.style.color = '#4CAF50';
+                    } else {
+                        playerItem.style.textDecoration = 'line-through';
+                        playerItem.style.opacity = '0.6';
+                        statusIcon.textContent = '❌';
+                        statusIcon.style.color = '#F44336';
+                    }
+                });
+                
+                playersList.appendChild(playerItem);
+            });
+            
+            content.appendChild(playersList);
+            
+            // Add sound button
+            const soundBtn = document.createElement('button');
+            soundBtn.textContent = '🔊 Play Night Sound';
+            soundBtn.id = 'soundBtn';
+            soundBtn.style.backgroundColor = '#6c757d';
+            soundBtn.style.color = 'white';
+            soundBtn.style.border = 'none';
+            soundBtn.style.padding = '15px 30px';
+            soundBtn.style.borderRadius = '5px';
+            soundBtn.style.cursor = 'pointer';
+            soundBtn.style.fontSize = '16px';
+            soundBtn.style.marginTop = '20px';
+            soundBtn.style.width = '100%';
+            
+            let audio = null;
+            soundBtn.addEventListener('click', () => {
+                if (audio && !audio.paused) {
+                    audio.pause();
+                    audio.currentTime = 0;
+                    soundBtn.textContent = '🔊 Play Night Sound';
+                } else {
+                    if (!audio) {
+                        audio = new Audio('./sounds/night.aac');
+                    }
+                    audio.currentTime = 0;
+                    audio.volume = 2.0;
+                    audio.play()
+                        .then(() => {
+                            soundBtn.textContent = '🔇 Stop Night Sound';
+                        })
+                        .catch(error => {
+                            console.error('Audio play failed:', error);
+                            showError('Could not play sound. Make sure your browser allows audio.');
+                        });
+                }
+            });
+            
+            content.appendChild(soundBtn);
+            
+            // Add end game button
+            const endGameBtn = document.createElement('button');
+            endGameBtn.textContent = 'End Game';
+            endGameBtn.id = 'endGameBtn';
+            endGameBtn.style.backgroundColor = '#F44336';
+            endGameBtn.style.color = 'white';
+            endGameBtn.style.border = 'none';
+            endGameBtn.style.padding = '15px 30px';
+            endGameBtn.style.borderRadius = '5px';
+            endGameBtn.style.cursor = 'pointer';
+            endGameBtn.style.fontSize = '16px';
+            endGameBtn.style.marginTop = '10px';
+            endGameBtn.style.width = '100%';
+            
+            endGameBtn.addEventListener('click', () => {
+                if (confirm('Are you sure you want to end the game? This cannot be undone.')) {
+                    socket.emit('endGame', { roomCode: currentGameRoom });
+                }
+            });
+            
+            content.appendChild(endGameBtn);
+            overlay.appendChild(content);
+            document.body.appendChild(overlay);
+        }
+        
+        // Socket event handlers
+        socket.on('moderatorRoomCreated', (data) => {
+            currentGameRoom = data.roomCode;
+            gameRoomCode.textContent = currentGameRoom;
+            gameInfoSection.style.display = 'block';
+            showSuccess(`Game room created! Code: ${currentGameRoom}`);
+            
+            // Request initial player list
+            socket.emit('getPlayerList', currentGameRoom);
+        });
+        
+        socket.on('playerList', (data) => {
+            updatePlayersDisplay(data.players);
+        });
+        
+        socket.on('userJoined', (data) => {
+            showSuccess(`Player ${data.username} joined the game`);
+            if (currentGameRoom) {
+                socket.emit('getPlayerList', currentGameRoom);
+            }
+        });
+        
+        socket.on('userLeft', (data) => {
+            showSuccess(`Player ${data.username} left the game`);
+            if (currentGameRoom) {
+                socket.emit('getPlayerList', currentGameRoom);
+            }
+        });
+        
+        socket.on('gameStarted', (data) => {
+            if (data.success) {
+                showSuccess('Game started! Roles have been assigned.');
+                showGameManagementView(data.players);
+            }
+        });
+        
+        socket.on('gameEnded', (data) => {
+            if (data.success) {
+                showSuccess('Game ended. Ready for next game!');
+                
+                // Simply remove the overlay
+                const overlay = document.getElementById('gameOverlay');
+                if (overlay) {
+                    document.body.removeChild(overlay);
+                }
+                
+                // Player list will auto-update via existing handlers
+            }
+        });
+        
+        socket.on('error', (data) => {
+            showError(data.message);
+        });
+        
+        // Helper functions
+        function showSuccess(message) {
+            statusSuccess.textContent = message;
+            statusSuccess.style.display = 'block';
+            statusError.style.display = 'none';
+            
+            setTimeout(() => {
+                statusSuccess.style.display = 'none';
+            }, 5000);
+        }
+        
+        function showError(message) {
+            statusError.textContent = message;
+            statusError.style.display = 'block';
+            statusSuccess.style.display = 'none';
+            
+            setTimeout(() => {
+                statusError.style.display = 'none';
+            }, 5000);
+        }
+        
+        function updatePlayersDisplay(users) {
+            if (users.length === 0) {
+                playersContainer.innerHTML = '<p>No players have joined yet. Waiting for players...</p>';
+                return;
+            }
+            
+            // Create a simple vertical list
+            const playersList = document.createElement('div');
+            
+            users.forEach(user => {
+                const playerItem = document.createElement('div');
+                playerItem.style.padding = '12px';
+                playerItem.style.borderBottom = '1px solid #eee';
+                playerItem.style.display = 'flex';
+                playerItem.style.alignItems = 'center';
+                playerItem.style.gap = '12px';
+                
+                // Player info
+                const infoSpan = document.createElement('span');
+                infoSpan.innerHTML = `<strong>${user.username}</strong><br><span style="color: #666; font-size: 14px;">${user.userId.substring(0, 8)}...</span>`;
+                
+                playerItem.appendChild(infoSpan);
+                playersList.appendChild(playerItem);
+            });
+            
+            playersContainer.innerHTML = '';
+            playersContainer.appendChild(playersList);
+        }
+    </script>
+</body>
+</html>

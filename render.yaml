@@ -1,0 +1,17 @@
+databases:
+  - name: werewolf_db
+    databaseName: werewolf
+    user: werewolf
+
+services:
+  - type: web
+    name: werewolf-game
+    env: node
+    buildCommand: npm install
+    startCommand: node index.js
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
